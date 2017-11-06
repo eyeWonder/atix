@@ -6,8 +6,6 @@
  */
 const int NUMOFNUMBERS = 20;
 int numbers[NUMOFNUMBERS];
-static uint8_t play0[6] = {0};
-static uint8_t volume_value[5]={0};
 const int X_pin = 1; // analog pin connected to X output
 const int Y_pin = 0; // analog pin to Y output
 const int button = 2; //digital pin connected to button in Joystick
@@ -29,6 +27,7 @@ void loop() {
   menu();
 }
 void set_volume(int opt){
+  static uint8_t volume_value[5]={0};
   uint8_t volume_total[30]={0x01, 0x02, 0x03, 0x04, 0x05,
                             0x06,0x07,0x08,0x09,0x0a,0x0b,
                             0x0c,0x0d,0x0e,0x0f,0x10,0x11,
@@ -45,9 +44,33 @@ void set_volume(int opt){
   }
   delay(300);
 }
-void play(int index,int audio_option) {
-  uint8_t audio_words[20] = { 0x01, 0x02, 0x03, 0x04, 0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10,0x11,0x12,0x13,0x14};
-  uint8_t audio_general[7]={0x01, 0x02, 0x03, 0x04, 0x05,0x06,0x07}; 
+void control_volume(){
+  int value=15; //Value of the volume
+  while(true){
+    bRead=digitalRead(button);
+    if(analogRead(Y_pin)/10>98 && value<30){  //To the right in the menu    
+      value++;
+      set_volume(value);
+      play(8,2); //Play sample pip        
+      delay(200);    
+    }
+    else if(analogRead(Y_pin)/10<3 && value>1){ //To the left in the menu
+      value--;   
+      set_volume(value);
+      play(8,2); //Play sample pip      
+      delay(200);
+    }
+    if(bRead==LOW){ //Confirm the volume selection
+      play(1,2);
+      return; 
+    }
+  }  
+}
+void play(int index,int audio_option) {  
+  static uint8_t play0[6] = {0};
+  uint8_t audio_words[20] = { 0x01, 0x02, 0x03, 0x04, 0x05,0x06,0x07,0x08,0x09,
+                              0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10,0x11,0x12,0x13,0x14};
+  uint8_t audio_general[9]={0x01, 0x02, 0x03, 0x04, 0x05,0x06,0x07,0x08,0x09}; 
   uint8_t audio_options[3]={0x01,0x02,0x03}; //01: English,02: German, 03: General audio
   play0[0] = 0x7e;
   play0[1] = 0x04;
@@ -117,11 +140,11 @@ void exercise(){ //Practice 5 random words of the list
     }
     if(bRead==LOW){
       if(option==exercise_word){
-        play(1,2);
+        play(1,2); //good answer sound
         break;
       }
       else{
-        play(2,2);
+        play(2,2); //wrong answer sound
       }
       delay(300);
     }  
@@ -129,7 +152,9 @@ void exercise(){ //Practice 5 random words of the list
 }
 void menu(){
   boolean flag=true;
+  boolean flag_menu=false;
   int menu_option=1;
+  int menu_options[2]={4,5}; //Learn (4) || Exercise (5)
   if(flag){
     play(6,2); //Play the main menu audio
     delay(1000);
@@ -138,31 +163,49 @@ void menu(){
   }
   while(true){
     bRead=digitalRead(button);
-    if(analogRead(X_pin)/10>98 && menu_option<2){  //To the right in the menu    
+    if(analogRead(X_pin)/10>98 && menu_option<3){  //To the right in the menu    
       menu_option++;
       flag=true;
+      flag_menu=true;
       delay(200);
-      play(5,2); //Play the second option (Exercise)
     }
     else if(analogRead(X_pin)/10<3 && menu_option>1){ //To the left in the menu
       if(menu_option!=0){
         menu_option--;
-        flag=true;       
-        delay(200);
-        play(4,2); //Play the first option (Learn)
+        flag=true;  
+        flag_menu=true;     
+        delay(200);        
       }
     }
+    if(flag_menu){
+      switch(menu_option){ //Play the name of the menu option
+        case 1:
+          play(4,2); //Play the first option          
+          break;
+        case 2:
+          play(5,2); //Play the second option
+          break;
+        case 3:
+          play(9,2); //Play the third option
+          break;
+      } 
+      flag_menu=false;     
+    }
+
     if(bRead==LOW){ //Confirm the menu option
       switch(menu_option){
-        case 1:          
-          break;
+        case 1: 
+          return;    
         case 2:
           play(1,2);
           for(int i=0;i<5;i++){
             exercise(); //Begin the exercise
-          }
-          return;           
-          break;  
+          } //Maybe ask at the end of the session, if the user wants another round of practice
+          return;  
+        case 3:
+          delay(300);
+          control_volume();
+          return;
       }
     }
   }  
