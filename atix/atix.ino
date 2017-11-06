@@ -1,7 +1,13 @@
+/* Atix is a concept device using an audio interface  learning  
+ * to learn and practice words in a foreign language.
+ * http://github.com/hfvaldesg/atix
+ * https://hackaday.io/project/27982-atix-language-learning-audio-based-device
+ * Developed by Hernán Valdés
+ */
 const int NUMOFNUMBERS = 20;
 int numbers[NUMOFNUMBERS];
-uint8_t vol[5] = { 0x7e, 0x03, 0x31, 0x19, 0xef }; //ef 10; 0f 15 ; 1E 30
 static uint8_t play0[6] = {0};
+static uint8_t volume_value[5]={0};
 const int X_pin = 1; // analog pin connected to X output
 const int Y_pin = 0; // analog pin connected to Y output
 const int button = 2; //digital pin connected to button in Joystick
@@ -12,39 +18,55 @@ int option;
 void setup() {
   Serial.begin(9600);
   pinMode(2, INPUT);
-  digitalWrite(2, HIGH);
+  digitalWrite(2, HIGH); //Set for the switch in the Joystick
   randomSeed(analogRead(A3));
-  
-  for (uint8_t i = 0; i < 5; i++) //
-  {
-    Serial.write(vol[i]);
-  }
-  delay(300);
+  set_volume(25);
   play(3,2);
   delay(2000);
 }
 
 void loop() {  
-  //exercise(); 
   menu();
 }
-void play(int option,int lang) {
+void set_volume(int opt){
+  uint8_t volume_total[30]={0x01, 0x02, 0x03, 0x04, 0x05,
+                            0x06,0x07,0x08,0x09,0x0a,0x0b,
+                            0x0c,0x0d,0x0e,0x0f,0x10,0x11,
+                            0x12,0x13,0x14,0x15,0x16,0x17,
+                            0x18,0x19,0x1a,0x1b,0x1c,0x1d,0x1e};
+  volume_value[0]=0x7e;
+  volume_value[1]=0x03;
+  volume_value[2]=0x31;
+  volume_value[3]=volume_total[opt-1];
+  volume_value[4]=0x19;
+  volume_value[5]=0xef;
+  for (uint8_t i = 0; i < 5; i++) //Set the initial volume
+  {
+    Serial.write(volume_value[i]);
+  }
+  delay(300);
+}
+void play(int index,int audio_option) {
   uint8_t audio_words[20] = { 0x01, 0x02, 0x03, 0x04, 0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10,0x11,0x12,0x13,0x14};
-  uint8_t language[3]={0x01,0x02,0x03}; //01: English,02: German, 03: Effects
-  uint8_t audio_good[6]={0x7e,0x04,0x42,0x03,0x01,0xef};
-  uint8_t audio_wrong[6]={0x7e,0x04,0x42,0x03,0x02,0xef};
-  uint8_t startup[6]={0x7e,0x04,0x42,0x03,0x03,0xef};
-  //play0[1]={0x7e, 0x04, 0x42, 0x01, 0x01, 0xef };
+  uint8_t audio_general[7]={0x01, 0x02, 0x03, 0x04, 0x05,0x06,0x07}; 
+  uint8_t audio_options[3]={0x01,0x02,0x03}; //01: English,02: German, 03: General audio
   play0[0] = 0x7e;
   play0[1] = 0x04;
   play0[2] = 0x42;
-  play0[3] = language[lang];
-  play0[4] = audio_words[option-1];
+  play0[3] = audio_options[audio_option];
+  switch(audio_option){
+    case 0:
+    case 1:
+      play0[4] = audio_words[index-1];
+      break;
+    case 2:
+      play0[4] = audio_general[index-1];
+  }  
   play0[5] = 0xef;
   for (uint8_t i = 0; i < 6; i++) {
     Serial.write(play0[i]);
   }
-  switch(lang){
+  switch(audio_option){
     case 0:
     case 1:
       delay(300);
@@ -71,7 +93,7 @@ void randomizeList()
     numbers[index] = r+1;
   }
 } 
-void exercise(){
+void exercise(){ //Practice 5 random words of the list
   randomizeList();  
   exercise_word=numbers[random(0,4)];  
   play(exercise_word,0);
@@ -107,39 +129,42 @@ void exercise(){
   }  
 }
 void menu(){
-  boolean flag=false;
+  boolean flag=true;
   int menu_option=1;
+  if(flag){
+    play(6,2); //Play the main menu audio
+    delay(300);
+    flag=false; 
+    play(4,2);//Play the first option (Learn)  
+  }
   while(true){
     bRead=digitalRead(button);
     if(analogRead(X_pin)/10>98 && menu_option<2){  //To the right in the menu    
       menu_option++;
-      flag=false;
-//      Serial.print(menu_option);
-//      Serial.print("\n");
+      flag=true;
       delay(200);
-      play(5,2);
+      play(5,2); //Play the second option (Exercise)
     }
     else if(analogRead(X_pin)/10<3 && menu_option>1){ //To the left in the menu
       if(menu_option!=0){
         menu_option--;
-        flag=false;
-//        Serial.print(menu_option);
-//        Serial.print("\n");        
+        flag=true;       
         delay(200);
-        play(4,2);
+        play(4,2); //Play the first option (Learn)
       }
     }
-    if(bRead==LOW)
+    if(bRead==LOW){ //Confirm the menu option
       switch(menu_option){
         case 1:          
           break;
         case 2:
           play(1,2);
           for(int i=0;i<5;i++){
-            exercise(); 
+            exercise(); //Begin the exercise
           }           
           break;  
       }
+    }
   }  
 }
 
