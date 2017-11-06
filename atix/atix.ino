@@ -47,7 +47,7 @@ void play(int option,int lang) {
   switch(lang){
     case 0:
     case 1:
-      delay(400);
+      delay(300);
     case 2:
       delay(800);
   }
@@ -110,20 +110,36 @@ void menu(){
   boolean flag=false;
   int menu_option=1;
   while(true){
-    if(analogRead(X_pin)/10>98 && menu_option<5){  //To the right in the menu    
+    bRead=digitalRead(button);
+    if(analogRead(X_pin)/10>98 && menu_option<2){  //To the right in the menu    
       menu_option++;
-      Serial.print(menu_option);
-      Serial.print("\n");
+      flag=false;
+//      Serial.print(menu_option);
+//      Serial.print("\n");
       delay(200);
+      play(5,2);
     }
-    else if(analogRead(X_pin)/10<3 && menu_option>0){ //To the left in the menu
+    else if(analogRead(X_pin)/10<3 && menu_option>1){ //To the left in the menu
       if(menu_option!=0){
         menu_option--;
-        Serial.print(menu_option);
-        Serial.print("\n");
+        flag=false;
+//        Serial.print(menu_option);
+//        Serial.print("\n");        
         delay(200);
+        play(4,2);
       }
-    } 
+    }
+    if(bRead==LOW)
+      switch(menu_option){
+        case 1:          
+          break;
+        case 2:
+          play(1,2);
+          for(int i=0;i<5;i++){
+            exercise(); 
+          }           
+          break;  
+      }
   }  
 }
 
