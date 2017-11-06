@@ -1,4 +1,4 @@
-/* Atix is a concept device using an audio interface  learning  
+/* Atix is a conceptual device using an audio interface  learning  
  * to learn and practice words in a foreign language.
  * http://github.com/hfvaldesg/atix
  * https://hackaday.io/project/27982-atix-language-learning-audio-based-device
@@ -42,26 +42,30 @@ void set_volume(int opt){
   {
     Serial.write(volume_value[i]);
   }
-  delay(300);
+  delay(100);
 }
 void control_volume(){
   int value=15; //Value of the volume
+  boolean flag_volume=false;
   while(true){
     bRead=digitalRead(button);
-    if(analogRead(Y_pin)/10>98 && value<30){  //To the right in the menu    
+    if(analogRead(Y_pin)/10>98 && value<30){  //Up in the Y axis    
       value++;
+      flag_volume=true;   
+    }
+    else if(analogRead(Y_pin)/10<3 && value>1){ //Down in the Y axis
+      value--;   
+      flag_volume=true;
+    }
+    if(flag_volume){
+      flag_volume=false;
       set_volume(value);
       play(8,2); //Play sample pip        
-      delay(200);    
-    }
-    else if(analogRead(Y_pin)/10<3 && value>1){ //To the left in the menu
-      value--;   
-      set_volume(value);
-      play(8,2); //Play sample pip      
-      delay(200);
-    }
+      delay(100);   
+    }    
     if(bRead==LOW){ //Confirm the volume selection
-      play(1,2);
+      play(1,2); //Play confirmation
+      delay(300);
       return; 
     }
   }  
@@ -91,9 +95,20 @@ void play(int index,int audio_option) {
   switch(audio_option){
     case 0:
     case 1:
-      delay(300);
+      delay(200);
     case 2:
-      delay(800);
+      switch(audio_general[index-1]){ //Custom volumes
+        case 0x01:
+        case 0x02:
+          delay(500);
+          break;
+        case 0x08:
+          delay(100);
+          break;
+        default:
+          delay(600);   
+          break;
+      }
   }
 }
 void randomizeList()
@@ -203,7 +218,8 @@ void menu(){
           } //Maybe ask at the end of the session, if the user wants another round of practice
           return;  
         case 3:
-          delay(300);
+          play(1,2);
+          delay(200);
           control_volume();
           return;
       }
