@@ -2,10 +2,9 @@ const int NUMOFNUMBERS = 20;
 int numbers[NUMOFNUMBERS];
 uint8_t vol[5] = { 0x7e, 0x03, 0x31, 0x19, 0xef }; //ef 10; 0f 15 ; 1E 30
 static uint8_t play0[6] = {0};
-const int X_pin = 0; // analog pin connected to X output
-const int Y_pin = 1; // analog pin connected to Y output
+const int X_pin = 1; // analog pin connected to X output
+const int Y_pin = 0; // analog pin connected to Y output
 const int button = 2; //digital pin connected to button in Joystick
-
 int bRead;
 int flag=0;
 int exercise_word;
@@ -26,40 +25,8 @@ void setup() {
 }
 
 void loop() {  
-  randomizeList();  
-  exercise_word=numbers[random(0,4)];  
-  play(exercise_word,0);
-  delay(1000);
-  while(true){
-    bRead=digitalRead(button);
-    if(analogRead(X_pin)/10>98){
-      option=numbers[0];
-      play(numbers[0],1);
-    }
-    else if(analogRead(X_pin)/10<3){
-      option=numbers[1];
-      play(numbers[1],1);
-    }
-    else if(analogRead(Y_pin)/10>98){
-      option=numbers[2];
-      play(numbers[2],1);
-    }
-    else if(analogRead(Y_pin)/10<3){
-      option=numbers[3];
-      play(numbers[3],1);      
-    }
-    if(bRead==LOW){
-      if(option==exercise_word){
-        play(1,2);
-        break;
-      }
-      else{
-        play(2,2);
-      }
-      delay(300);
-    }  
-  }
-  
+  //exercise(); 
+  menu();
 }
 void play(int option,int lang) {
   uint8_t audio_words[20] = { 0x01, 0x02, 0x03, 0x04, 0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10,0x11,0x12,0x13,0x14};
@@ -102,9 +69,61 @@ void randomizeList()
     }
     chosen[r] = 1;
     numbers[index] = r+1;
-    Serial.print(numbers[index]);
-    Serial.print(" ");
   }
-  Serial.println("");
 } 
+void exercise(){
+  randomizeList();  
+  exercise_word=numbers[random(0,4)];  
+  play(exercise_word,0);
+  delay(1000);
+  while(true){
+    bRead=digitalRead(button);
+    if(analogRead(X_pin)/10>98){
+      option=numbers[0];
+      play(numbers[0],1);
+    }
+    else if(analogRead(X_pin)/10<3){
+      option=numbers[1];
+      play(numbers[1],1);
+    }
+    else if(analogRead(Y_pin)/10>98){
+      option=numbers[2];
+      play(numbers[2],1);
+    }
+    else if(analogRead(Y_pin)/10<3){
+      option=numbers[3];
+      play(numbers[3],1);      
+    }
+    if(bRead==LOW){
+      if(option==exercise_word){
+        play(1,2);
+        break;
+      }
+      else{
+        play(2,2);
+      }
+      delay(300);
+    }  
+  }  
+}
+void menu(){
+  boolean flag=false;
+  int menu_option=1;
+  while(true){
+    if(analogRead(X_pin)/10>98 && menu_option<5){  //To the right in the menu    
+      menu_option++;
+      Serial.print(menu_option);
+      Serial.print("\n");
+      delay(200);
+    }
+    else if(analogRead(X_pin)/10<3 && menu_option>0){ //To the left in the menu
+      if(menu_option!=0){
+        menu_option--;
+        Serial.print(menu_option);
+        Serial.print("\n");
+        delay(200);
+      }
+    } 
+  }  
+}
 
