@@ -9,7 +9,7 @@ int numbers[NUMOFNUMBERS];
 static uint8_t play0[6] = {0};
 static uint8_t volume_value[5]={0};
 const int X_pin = 1; // analog pin connected to X output
-const int Y_pin = 0; // analog pin connected to Y output
+const int Y_pin = 0; // analog pin to Y output
 const int button = 2; //digital pin connected to button in Joystick
 int bRead;
 int flag=0;
@@ -20,7 +20,7 @@ void setup() {
   pinMode(2, INPUT);
   digitalWrite(2, HIGH); //Set for the switch in the Joystick
   randomSeed(analogRead(A3));
-  set_volume(25);
+  set_volume(15);
   play(3,2);
   delay(2000);
 }
@@ -38,8 +38,7 @@ void set_volume(int opt){
   volume_value[1]=0x03;
   volume_value[2]=0x31;
   volume_value[3]=volume_total[opt-1];
-  volume_value[4]=0x19;
-  volume_value[5]=0xef;
+  volume_value[4]=0xef;
   for (uint8_t i = 0; i < 5; i++) //Set the initial volume
   {
     Serial.write(volume_value[i]);
@@ -133,7 +132,7 @@ void menu(){
   int menu_option=1;
   if(flag){
     play(6,2); //Play the main menu audio
-    delay(300);
+    delay(1000);
     flag=false; 
     play(4,2);//Play the first option (Learn)  
   }
@@ -161,7 +160,8 @@ void menu(){
           play(1,2);
           for(int i=0;i<5;i++){
             exercise(); //Begin the exercise
-          }           
+          }
+          return;           
           break;  
       }
     }
