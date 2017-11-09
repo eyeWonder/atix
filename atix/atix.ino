@@ -102,6 +102,10 @@ void play(int index,int audio_option) {
         case 0x08: //pip
           delay(100);
           break;
+        case 0x0b:
+        case 0x0c:
+          delay(500);
+          break;
         default:
           delay(600);   
           break;
@@ -133,7 +137,7 @@ void exercise(){ //Practice 5 random words of the list
   randomizeList();  
   exercise_word=numbers[random(0,4)];  
   play(exercise_word,0);
-  delay(1000);
+  delay(200);
   while(true){
     bRead=digitalRead(button);
     if(analogRead(X_pin)/10>98){
@@ -170,15 +174,15 @@ boolean repeat_session(){
   while(true){
     bRead=digitalRead(button);
     if(analogRead(X_pin)/10>98){  //Up in the Y axis    
-      play(11,2);
-      answer=1; 
+      play(12,2); //no
+      answer=false; 
     }
     else if(analogRead(X_pin)/10<3){ //Down in the Y axis
-      play(12,2);
-      answer=2;
+      play(11,2);
+      answer=true;
     }   
     if(bRead==LOW){ //Confirm if the user want to keep playing
-      if(answer!=NULL){
+      if(answer==true || answer ==false){
         play(1,2); //Play confirmation
         delay(300);
         return answer;         
