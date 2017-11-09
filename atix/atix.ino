@@ -10,15 +10,12 @@ const int X_pin = 1; // analog pin connected to X output
 const int Y_pin = 0; // analog pin to Y output
 const int button = 2; //digital pin connected to button in Joystick
 int bRead;
-int flag=0;
-int exercise_word;
-int option;
 void setup() {
   Serial.begin(9600);
   pinMode(2, INPUT);
   digitalWrite(2, HIGH); //Set for the switch in the Joystick
   randomSeed(analogRead(A3));
-  set_volume(15);
+  set_volume(20);
   play(3,2);
   delay(2000);
 }
@@ -74,7 +71,7 @@ void play(int index,int audio_option) {
   static uint8_t play0[6] = {0};
   uint8_t audio_words[20] = { 0x01, 0x02, 0x03, 0x04, 0x05,0x06,0x07,0x08,0x09,
                               0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10,0x11,0x12,0x13,0x14};
-  uint8_t audio_general[9]={0x01, 0x02, 0x03, 0x04, 0x05,0x06,0x07,0x08,0x09}; 
+  uint8_t audio_general[12]={0x01, 0x02, 0x03, 0x04, 0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c}; 
   uint8_t audio_options[3]={0x01,0x02,0x03}; //01: English,02: German, 03: General audio
   play0[0] = 0x7e;
   play0[1] = 0x04;
@@ -98,11 +95,11 @@ void play(int index,int audio_option) {
       delay(200);
     case 2:
       switch(audio_general[index-1]){ //Custom volumes
-        case 0x01:
-        case 0x02:
-          delay(500);
+        case 0x01: //correct
+        case 0x02: //wrong
+          delay(700);
           break;
-        case 0x08:
+        case 0x08: //pip
           delay(100);
           break;
         default:
@@ -131,6 +128,8 @@ void randomizeList()
   }
 } 
 void exercise(){ //Practice 5 random words of the list
+  int exercise_word;
+  int option;
   randomizeList();  
   exercise_word=numbers[random(0,4)];  
   play(exercise_word,0);
@@ -165,9 +164,35 @@ void exercise(){ //Practice 5 random words of the list
     }  
   }  
 }
+boolean repeat_session(){
+  play(10,2);
+  boolean answer;
+  while(true){
+    bRead=digitalRead(button);
+    if(analogRead(X_pin)/10>98){  //Up in the Y axis    
+      play(11,2);
+      answer=1; 
+    }
+    else if(analogRead(X_pin)/10<3){ //Down in the Y axis
+      play(12,2);
+      answer=2;
+    }   
+    if(bRead==LOW){ //Confirm if the user want to keep playing
+      if(answer!=NULL){
+        play(1,2); //Play confirmation
+        delay(300);
+        return answer;         
+      }
+      else{
+        play(2,2); //Play wrong
+      }
+    }
+  }      
+}
 void menu(){
   boolean flag=true;
   boolean flag_menu=false;
+  boolean continue_exercise=true;
   int menu_option=1;
   int menu_options[2]={4,5}; //Learn (4) || Exercise (5)
   if(flag){
@@ -206,18 +231,22 @@ void menu(){
       } 
       flag_menu=false;     
     }
-
     if(bRead==LOW){ //Confirm the menu option
       switch(menu_option){
-        case 1: 
+        case 1: //Learn (not ready. don't know what to do)
           return;    
-        case 2:
+        case 2: //Exercise
           play(1,2);
-          for(int i=0;i<5;i++){
+          while(continue_exercise){
+            for(int i=0;i<5;i++){
             exercise(); //Begin the exercise
-          } //Maybe ask at the end of the session, if the user wants another round of practice
-          return;  
-        case 3:
+            } //Maybe ask at the end of the session, if the user wants another round of practice
+            continue_exercise=repeat_session();
+            if(continue_exercise==false){
+              return;      
+            }              
+          }          
+        case 3: //Control Volume
           play(1,2);
           delay(200);
           control_volume();
