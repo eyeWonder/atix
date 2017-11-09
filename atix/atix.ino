@@ -116,10 +116,8 @@ void randomizeList()
 {
   unsigned char chosen[NUMOFNUMBERS];
   unsigned char index, i2;
-
   for (index = 0; index < NUMOFNUMBERS; index++)
     chosen[index] = 0;
-
   for (index = 0; index < NUMOFNUMBERS; index++)
   {
     int r = random(NUMOFNUMBERS-index);
@@ -133,7 +131,7 @@ void randomizeList()
 } 
 void exercise(){ //Practice 5 random words of the list
   int exercise_word;
-  int option;
+  int option=-1;
   randomizeList();  
   exercise_word=numbers[random(0,4)];  
   play(exercise_word,0);
@@ -160,6 +158,9 @@ void exercise(){ //Practice 5 random words of the list
       if(option==exercise_word){
         play(1,2); //good answer sound
         break;
+      }
+      else if(option==-1){ //Repeat the word, if you couldn't understand it
+        play(exercise_word,0);
       }
       else{
         play(2,2); //wrong answer sound
@@ -259,4 +260,3 @@ void menu(){
     }
   }  
 }
-
