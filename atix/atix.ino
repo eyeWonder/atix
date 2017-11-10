@@ -16,7 +16,7 @@ void setup() {
   digitalWrite(2, HIGH); //Set for the switch in the Joystick
   randomSeed(analogRead(A3));
   set_volume(20);
-  play(3,2);
+  play("effect",1,3);
   delay(2000);
 }
 
@@ -57,59 +57,63 @@ void control_volume(){
     if(flag_volume){
       flag_volume=false;
       set_volume(value);
-      play(8,2); //Play sample pip        
+      play("effect",2,4); //Play sample pip        
       delay(100);   
     }    
     if(bRead==LOW){ //Confirm the volume selection
-      play(1,2); //Play confirmation
+      play("effect",1,1); //Play confirmation
       delay(300);
       return; 
     }
   }  
 }
-void play(int index,int audio_option) {  
+//void play(int index,int audio_option) {  
+void play(String opt1,int opt2, int index) {
   static uint8_t play0[6] = {0};
   uint8_t audio_words[20] = { 0x01, 0x02, 0x03, 0x04, 0x05,0x06,0x07,0x08,0x09,
                               0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10,0x11,0x12,0x13,0x14};
   uint8_t audio_general[12]={0x01, 0x02, 0x03, 0x04, 0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c}; 
+  uint8_t audio_effects[4]={0x01, 0x02, 0x03, 0x04};
+  uint8_t audio_menu[8]={0x01, 0x02, 0x03, 0x04, 0x05,0x06,0x07,0x08};
   uint8_t audio_options[3]={0x01,0x02,0x03}; //01: English,02: German, 03: General audio
   play0[0] = 0x7e;
   play0[1] = 0x04;
   play0[2] = 0x42;
-  play0[3] = audio_options[audio_option];
-  switch(audio_option){
-    case 0:
-    case 1:
-      play0[4] = audio_words[index-1];
-      break;
-    case 2:
-      play0[4] = audio_general[index-1];
+  if(opt1=="language" &&opt2==1){
+    play0[3]=0x01; 
+    play0[4]=audio_words[index-1];
+  }
+  else if(opt1=="language" &&opt2==2){
+    play0[3]=0x02;
+    play0[4]=audio_words[index-1];
+  }
+  else if(opt1=="effect"){
+    play0[3]=0x03;
+    play0[4]=audio_effects[index-1];
+  }
+  else if(opt1=="menu_item"){
+    play0[3]=0x04;
+    play0[4]=audio_menu[index-1];
   }  
   play0[5] = 0xef;
   for (uint8_t i = 0; i < 6; i++) {
     Serial.write(play0[i]);
   }
-  switch(audio_option){
-    case 0:
-    case 1:
-      delay(200);
-    case 2:
-      switch(audio_general[index-1]){ //Custom volumes
-        case 0x01: //correct
-        case 0x02: //wrong
-          delay(700);
-          break;
-        case 0x08: //pip
-          delay(100);
-          break;
-        case 0x0b:
-        case 0x0c:
-          delay(500);
-          break;
-        default:
-          delay(600);   
-          break;
-      }
+  if(opt1=="language"){
+    delay(300);
+  }
+  else if(opt1=="effect"){
+    switch(opt2){
+      case 1: //Long duration
+        delay(600);
+        break;
+      case 2: //Short duration
+        delay(100);
+        break;
+    }
+  }
+  else if(opt1=="menu_item"){
+    delay(600);  
   }
 }
 void randomizeList()
@@ -134,62 +138,62 @@ void exercise(){ //Practice 5 random words of the list
   int option=-1;
   randomizeList();  
   exercise_word=numbers[random(0,4)];  
-  play(exercise_word,0);
+  play("language",1,exercise_word);
   delay(200);
   while(true){
     bRead=digitalRead(button);
     if(analogRead(X_pin)/10>98){
       option=numbers[0];
-      play(numbers[0],1);
+      play("language",2,numbers[0]);
     }
     else if(analogRead(X_pin)/10<3){
       option=numbers[1];
-      play(numbers[1],1);
+      play("language",2,numbers[1]);
     }
     else if(analogRead(Y_pin)/10>98){
       option=numbers[2];
-      play(numbers[2],1);
+      play("language",2,numbers[2]);
     }
     else if(analogRead(Y_pin)/10<3){
       option=numbers[3];
-      play(numbers[3],1);      
+      play("language",2,numbers[3]);      
     }
     if(bRead==LOW){
       if(option==exercise_word){
-        play(1,2); //good answer sound
+        play("effect",1,1); //good answer sound
         break;
       }
       else if(option==-1){ //Repeat the word, if you couldn't understand it
-        play(exercise_word,0);
+        play("language",1,exercise_word);
       }
       else{
-        play(2,2); //wrong answer sound
+        play("effect",1,2); //wrong answer sound
       }
       delay(300);
     }  
   }  
 }
 boolean repeat_session(){
-  play(10,2);
+  play("menu_item",1,4);
   boolean answer;
   while(true){
     bRead=digitalRead(button);
-    if(analogRead(X_pin)/10>98){  //Up in the Y axis    
-      play(12,2); //no
-      answer=false; 
+    if(analogRead(X_pin)/10>98){  //Up in the Y axis         
+      play("menu_item",1,7); //no
+      answer=true;
     }
     else if(analogRead(X_pin)/10<3){ //Down in the Y axis
-      play(11,2);
-      answer=true;
+      play("menu_item",1,8); //yes
+      answer=false;  
     }   
     if(bRead==LOW){ //Confirm if the user want to keep playing
       if(answer==true || answer ==false){
-        play(1,2); //Play confirmation
+        play("effect",1,1); //Play confirmation
         delay(300);
         return answer;         
       }
       else{
-        play(2,2); //Play wrong
+        play("effect",1,2); //Play wrong
       }
     }
   }      
@@ -201,10 +205,10 @@ void menu(){
   int menu_option=1;
   int menu_options[2]={4,5}; //Learn (4) || Exercise (5)
   if(flag){
-    play(6,2); //Play the main menu audio
+    play("menu_item",1,3); //Play the main menu audio
     delay(1000);
     flag=false; 
-    play(4,2);//Play the first option (Learn)  
+    play("menu_item",1,1);//Play the first option (Learn)  
   }
   while(true){
     bRead=digitalRead(button);
@@ -225,13 +229,13 @@ void menu(){
     if(flag_menu){
       switch(menu_option){ //Play the name of the menu option
         case 1:
-          play(4,2); //Play the first option          
+          play("menu_item",1,1); //Play the first option          
           break;
         case 2:
-          play(5,2); //Play the second option
+          play("menu_item",1,2); //Play the second option
           break;
         case 3:
-          play(9,2); //Play the third option
+          play("menu_item",1,5); //Play the third option
           break;
       } 
       flag_menu=false;     
@@ -241,7 +245,7 @@ void menu(){
         case 1: //Learn (not ready. don't know what to do)
           return;    
         case 2: //Exercise
-          play(1,2);
+          play("effect",1,1);
           while(continue_exercise){
             for(int i=0;i<5;i++){
             exercise(); //Begin the exercise
@@ -252,7 +256,7 @@ void menu(){
             }              
           }          
         case 3: //Control Volume
-          play(1,2);
+          play("effect",1,1);
           delay(200);
           control_volume();
           return;
