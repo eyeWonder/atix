@@ -21,7 +21,7 @@ void setup() {
 }
 
 void loop() {  
-  menu();
+  start();
 }
 void set_volume(int opt){
   static uint8_t volume_value[5]={0};
@@ -198,7 +198,48 @@ boolean repeat_session(){
     }
   }      
 }
-void menu(){
+int menu_generator(String menu_name){
+  int option=0;
+  int options;
+  boolean flag_menu=false;
+  int main_menu[3]={1,2,5};
+  int exercise_menu[2]={9,10};
+  if(menu_name=="main"){
+    options=3;
+  }
+  else if(menu_name="exercise"){
+    options=2;
+  }
+  while(true){
+    bRead=digitalRead(button);
+    if(analogRead(X_pin)/10>98 && option<options+1){  //To the right in the menu    
+      option++;
+      flag_menu=true;
+      delay(200);
+    }
+    else if(analogRead(X_pin)/10<3 && option>1){ //To the left in the menu
+      if(option!=0){
+        option--;
+        flag_menu=true;     
+        delay(200);        
+      }
+    }
+    if(flag_menu){
+      if(menu_name=="main_menu"){
+        play("menu_item",1,main_menu[option-1]);
+      }
+      else if(menu_name=="exercise"){
+        play("menu_item",1,exercise_menu[option-1]);
+      }           
+    }
+    flag_menu=false;
+    if(bRead==LOW){ //Confirm the menu option
+      play("effect",1,1);
+      return option;
+    }
+  }      
+}
+void start(){
   boolean flag=true;
   boolean flag_menu=false;
   boolean continue_exercise=true;
@@ -207,45 +248,13 @@ void menu(){
   if(flag){
     play("menu_item",1,3); //Play the main menu audio
     delay(1000);
-    flag=false; 
-    play("menu_item",1,1);//Play the first option (Learn)  
+    flag=false;  
   }
-  while(true){
-    bRead=digitalRead(button);
-    if(analogRead(X_pin)/10>98 && menu_option<3){  //To the right in the menu    
-      menu_option++;
-      flag=true;
-      flag_menu=true;
-      delay(200);
-    }
-    else if(analogRead(X_pin)/10<3 && menu_option>1){ //To the left in the menu
-      if(menu_option!=0){
-        menu_option--;
-        flag=true;  
-        flag_menu=true;     
-        delay(200);        
-      }
-    }
-    if(flag_menu){
-      switch(menu_option){ //Play the name of the menu option
-        case 1:
-          play("menu_item",1,1); //Play the first option          
-          break;
-        case 2:
-          play("menu_item",1,2); //Play the second option
-          break;
-        case 3:
-          play("menu_item",1,5); //Play the third option
-          break;
-      } 
-      flag_menu=false;     
-    }
-    if(bRead==LOW){ //Confirm the menu option
-      switch(menu_option){
+  menu_option=menu_generator("main_menu");
+  switch(menu_option){
         case 1: //Learn (not ready. don't know what to do)
           return;    
         case 2: //Exercise
-          play("effect",1,1);
           while(continue_exercise){
             for(int i=0;i<5;i++){
             exercise(); //Begin the exercise
@@ -256,11 +265,8 @@ void menu(){
             }              
           }          
         case 3: //Control Volume
-          play("effect",1,1);
           delay(200);
           control_volume();
           return;
-      }
-    }
   }  
 }
