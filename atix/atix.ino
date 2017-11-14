@@ -4,7 +4,7 @@
  * https://hackaday.io/project/27982-atix-language-learning-audio-based-device
  * Developed by Hernán Valdés
  */
-const int NUMOFNUMBERS = 20;
+const int NUMOFNUMBERS = 10;
 int numbers[NUMOFNUMBERS];
 const int X_pin = 1; // analog pin connected to X output
 const int Y_pin = 0; // analog pin to Y output
@@ -74,7 +74,7 @@ void play(String opt1,int opt2, int index) {
                               0x0a,0x0b,0x0c,0x0d,0x0e,0x0f,0x10,0x11,0x12,0x13,0x14};
   uint8_t audio_general[12]={0x01, 0x02, 0x03, 0x04, 0x05,0x06,0x07,0x08,0x09,0x0a,0x0b,0x0c}; 
   uint8_t audio_effects[4]={0x01, 0x02, 0x03, 0x04};
-  uint8_t audio_menu[8]={0x01, 0x02, 0x03, 0x04, 0x05,0x06,0x07,0x08};
+  uint8_t audio_menu[10]={0x01, 0x02, 0x03, 0x04, 0x05,0x06,0x07,0x08,0x09,0x0a};
   uint8_t audio_options[3]={0x01,0x02,0x03}; //01: English,02: German, 03: General audio
   play0[0] = 0x7e;
   play0[1] = 0x04;
@@ -133,30 +133,31 @@ void randomizeList()
     numbers[index] = r+1;
   }
 } 
-void exercise(){ //Practice 5 random words of the list
+void exercise(int group){ //Practice 5 random words of the list
   int exercise_word;
   int option=-1;
+  int group_factor=10*(group-1);
   randomizeList();  
   exercise_word=numbers[random(0,4)];  
-  play("language",1,exercise_word);
+  play("language",1,exercise_word+group_factor);
   delay(200);
   while(true){
     bRead=digitalRead(button);
     if(analogRead(X_pin)/10>98){
       option=numbers[0];
-      play("language",2,numbers[0]);
+      play("language",2,numbers[0]+group_factor);
     }
     else if(analogRead(X_pin)/10<3){
       option=numbers[1];
-      play("language",2,numbers[1]);
+      play("language",2,numbers[1]+group_factor);
     }
     else if(analogRead(Y_pin)/10>98){
       option=numbers[2];
-      play("language",2,numbers[2]);
+      play("language",2,numbers[2]+group_factor);
     }
     else if(analogRead(Y_pin)/10<3){
       option=numbers[3];
-      play("language",2,numbers[3]);      
+      play("language",2,numbers[3]+group_factor);      
     }
     if(bRead==LOW){
       if(option==exercise_word){
@@ -173,18 +174,18 @@ void exercise(){ //Practice 5 random words of the list
     }  
   }  
 }
-boolean repeat_session(){
+boolean return_main_menu(){
   play("menu_item",1,4);
   boolean answer;
   while(true){
     bRead=digitalRead(button);
     if(analogRead(X_pin)/10>98){  //Up in the Y axis         
       play("menu_item",1,7); //no
-      answer=true;
+      answer=false;
     }
     else if(analogRead(X_pin)/10<3){ //Down in the Y axis
       play("menu_item",1,8); //yes
-      answer=false;  
+      answer=true;  
     }   
     if(bRead==LOW){ //Confirm if the user want to keep playing
       if(answer==true || answer ==false){
@@ -204,7 +205,7 @@ int menu_generator(String menu_name){
   boolean flag_menu=false;
   int main_menu[3]={1,2,5};
   int exercise_menu[2]={9,10};
-  if(menu_name=="main"){
+  if(menu_name=="main_menu"){
     options=3;
   }
   else if(menu_name="exercise"){
@@ -212,7 +213,7 @@ int menu_generator(String menu_name){
   }
   while(true){
     bRead=digitalRead(button);
-    if(analogRead(X_pin)/10>98 && option<options+1){  //To the right in the menu    
+    if(analogRead(X_pin)/10>98 && option<options){  //To the right in the menu    
       option++;
       flag_menu=true;
       delay(200);
@@ -241,10 +242,9 @@ int menu_generator(String menu_name){
 }
 void start(){
   boolean flag=true;
-  boolean flag_menu=false;
   boolean continue_exercise=true;
-  int menu_option=1;
-  int menu_options[2]={4,5}; //Learn (4) || Exercise (5)
+  int menu_option;
+  int exercise_option;
   if(flag){
     play("menu_item",1,3); //Play the main menu audio
     delay(1000);
@@ -255,11 +255,12 @@ void start(){
         case 1: //Learn (not ready. don't know what to do)
           return;    
         case 2: //Exercise
+          exercise_option=menu_generator("exercise");
           while(continue_exercise){
             for(int i=0;i<5;i++){
-            exercise(); //Begin the exercise
+            exercise(exercise_option); //Begin the exercise
             } //Maybe ask at the end of the session, if the user wants another round of practice
-            continue_exercise=repeat_session();
+            continue_exercise=return_main_menu();
             if(continue_exercise==false){
               return;      
             }              
